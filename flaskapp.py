@@ -77,9 +77,30 @@ def signup():
     else:
         return render_template("signup.html")
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template("login.html")
+    if request.method == 'POST':
+        # retrive + url encoding for all fields
+        username = urllib.quote_plus(request.form['username'])
+        password = urllib.quote_plus(request.form['password'])
+        
+        # hash + salt for username and password
+        secured_username = make_secure_username(username)
+        secured_password = make_secure_password(password)
+        
+        # query for the user in database
+        rows = select_query("""SELECT COUNT(*) FROM user WHERE username = ? AND password = ?""",
+                            [secured_username, secured_password])
+
+        # if user exist, sent to welcomeback page. else disply error
+        if rows[0][0] == 1:
+            return redirect(url_for('welcomeback'))
+        else:
+            return render_template("login.html",
+                                   username=urllib.unquote_plus(username),
+                                   error_username="user not exist or incorrect password")
+    else:
+        return render_template("login.html")
 
 @app.route('/welcomeback')
 def welcomeback():
