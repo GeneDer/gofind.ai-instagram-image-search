@@ -1,10 +1,56 @@
+<!DOCTYPE html>
+
 <html>
+  <head>
+    <title>Sign Up</title>
+  </head>
+  
   <body>
     <h1>Gofind.ai Ad Server</h1>
-    <form action="{{url_for('index', restaurant_id=restaurant_id )}}" method = 'POST'>
-      <p>Name:</p>
-      <input type='text' size='30' name='name'>
-      <input type='submit' value='Create'>
+    
+    <h2>Signup</h2>
+    <form method="POST">
+      <table>
+        <tr>
+          <td class="label">
+            Username
+          </td>
+          <td>
+            <input type="text" name="username" value="{{username}}">
+              </td>
+          <td class="error">
+            {{error_username}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="label">
+            Password
+          </td>
+          <td>
+            <input type="password" name="password" value="">
+              </td>
+          <td class="error">
+            {{error_password}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="label">
+            Verify Password
+          </td>
+          <td>
+            <input type="password" name="verify" value="">
+              </td>
+          <td class="error">
+            {{error_verify}}
+          </td>
+        </tr>
+      </table>
+      
+      <input type="submit">
+      <a href = '{{ url_for('index') }}'>Cancel</a>
     </form>
   </body>
+  
 </html>
