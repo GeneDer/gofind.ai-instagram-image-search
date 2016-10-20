@@ -35,11 +35,13 @@ def index():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
+
+        # retrive + url encoding for all fields
         username = urllib.quote_plus(request.form['username'])
         password = urllib.quote_plus(request.form['password'])
         verify = urllib.quote_plus(request.form['verify'])
         
-        # checking for valid entries
+        # check for valid entries
         if len(username) > 250:
             return render_template("signup.html",
                                    error_username='length of username > 250')
@@ -56,18 +58,21 @@ def signup():
         if password != verify:
             return render_template("signup.html",
                                    error_varify='passwords do not match')
+
+        # hash + salt for username and password
         secured_username = make_secure_username(username)
         secured_password = make_secure_password(password)
+
+        # check for duplicated usernames
         rows = select_query("""SELECT COUNT(*) FROM user WHERE username = ?""",
                             [secured_username])
-        print "hello:", rows, len((secured_username, secured_password))
         if rows[0][0] != 0:
             return render_template("signup.html",
                                    error_username='username already exist')
 
+        # if all correct, store the data into database and redirect to welcomeback page
         insert_query("""INSERT INTO user (username,password) VALUES (?,?)""",
                       [secured_username, secured_password])
-
         return redirect(url_for('welcomeback'))
     else:
         return render_template("signup.html")
