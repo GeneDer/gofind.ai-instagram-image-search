@@ -1,13 +1,13 @@
 from collections import Counter
 import csv
 import sqlite3
-import urllib
 import hmac
 
 from flask import Flask, request, g, render_template, redirect, url_for
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
 USERNAME = None
+CATEGORY = ['Top', 'Bottom', 'Shoes', 'Accessory']
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -38,9 +38,9 @@ def signup():
     if request.method == 'POST':
 
         # retrive + url encoding for all fields
-        username = urllib.quote_plus(request.form['username'])
-        password = urllib.quote_plus(request.form['password'])
-        verify = urllib.quote_plus(request.form['verify'])
+        username = request.form['username']
+        password = request.form['password']
+        verify = request.form['verify']
         
         # check for valid entries
         if len(username) > 250:
@@ -48,7 +48,7 @@ def signup():
                                    error_username='length of username > 250')
         if len(username) == 0:
             return render_template("signup.html",
-                                   username=urllib.unquote_plus(username),
+                                   username=username,
                                    error_username='no username entered')
         if len(password) > 250:
             return render_template("signup.html",
@@ -85,8 +85,8 @@ def signup():
 def login():
     if request.method == 'POST':
         # retrive + url encoding for all fields
-        username = urllib.quote_plus(request.form['username'])
-        password = urllib.quote_plus(request.form['password'])
+        username = request.form['username']
+        password = request.form['password']
         
         # hash + salt for username and password
         secured_username = make_secure_username(username)
@@ -103,7 +103,7 @@ def login():
             return redirect(url_for('welcomeback'))
         else:
             return render_template("login.html",
-                                   username=urllib.unquote_plus(username),
+                                   username=username,
                                    error_username="user not exist or incorrect password")
     else:
         return render_template("login.html")
@@ -131,7 +131,7 @@ def welcomeback():
                                 FROM campaign WHERE username = ? AND active = ?""",
                              [USERNAME, True])
         
-        # TODO: add feature to deactative the campaign on the sence
+        # TODO: add feature to deactative/actative the campaign on the sence
 
         return render_template("welcomeback.html", bill=bill, items=items)
 
@@ -141,10 +141,12 @@ def newcampaign():
     if not USERNAME:
         return redirect(url_for('index'))
     else:
+        selected = ['selected'] + ['']*(len(CATEGORY) - 1)
         if request.method == 'POST':
+            # revise order
             pass
         else:
-            return render_template("newcampaign.html")
+            return render_template("newcampaign.html", items=CATEGORY, selected=selected)
 
 @app.route('/modify/<int:campaign_id>', methods=['GET', 'POST'])
 def modify(campaign_id):
@@ -152,7 +154,7 @@ def modify(campaign_id):
     if not USERNAME:
         return redirect(url_for('index'))
     else:
-        # TODO: make sure the user own the campaign
+        # TODO: make sure the user owns the campaign
         return render_template("modify.html")
 
 @app.route('/payment')

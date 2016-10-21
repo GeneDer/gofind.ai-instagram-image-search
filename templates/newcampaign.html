@@ -14,37 +14,86 @@
       <table>
         <tr>
           <td class="label">
-            Username
+            Category
           </td>
           <td>
-            <input type="text" name="username" value="{{username}}">
-              </td>
-          <td class="error">
-            {{error_username}}
+            <select name="category">
+              {% for i in xrange(len(items)) %}
+                <option value="{{ items[i] }}" {{ selected[i] }} selected=>{{ items[i] }}</option>
+              {% endfor %}
+            </select>
           </td>
         </tr>
         
         <tr>
           <td class="label">
-            Password
+            Budget
           </td>
           <td>
-            <input type="password" name="password" value="">
+            <input type="text" name="budget" value="{{ budget }}">
               </td>
           <td class="error">
-            {{error_password}}
+            {{error_budget}}
           </td>
         </tr>
         
         <tr>
           <td class="label">
-            Verify Password
+            Minimun Bidding Price
           </td>
           <td>
-            <input type="password" name="verify" value="">
+            <input type="text" name="min_bid" value="{{ min_bid }}">
               </td>
           <td class="error">
-            {{error_verify}}
+            {{error_min}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="label">
+            Maximum Bidding Price
+          </td>
+          <td>
+            <input type="text" name="max_bid" value="{{ max_bid }}">
+              </td>
+          <td class="error">
+            {{error_max}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="label">
+            Ad url
+          </td>
+          <td>
+            <input type="text" name="ad_url" value="{{ ad_url }}">
+              </td>
+          <td class="error">
+            {{error_ad_url}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="label">
+            Description
+          </td>
+          <td>
+            <input type="text" name="min_bid" value="{{ min_bid }}">
+              </td>
+          <td class="error">
+            {{error_min}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="label">
+            Minimun Bidding Price
+          </td>
+          <td>
+            <input type="text" name="min_bid" value="{{ min_bid }}">
+              </td>
+          <td class="error">
+            {{error_min}}
           </td>
         </tr>
       </table>
