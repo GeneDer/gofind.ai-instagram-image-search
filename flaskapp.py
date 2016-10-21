@@ -7,6 +7,7 @@ import hmac
 from flask import Flask, request, g, render_template, redirect, url_for
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
+USERNAME = None
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -71,8 +72,11 @@ def signup():
                                    error_username='username already exist')
 
         # if all correct, store the data into database and redirect to welcomeback page
-        insert_query("""INSERT INTO user (username,password) VALUES (?,?)""",
+        insert_query("""INSERT INTO user (username, password, bill)
+                        VALUES (?,?,0)""",
                       [secured_username, secured_password])
+        global USERNAME
+        USERNAME = secured_username
         return redirect(url_for('welcomeback'))
     else:
         return render_template("signup.html")
@@ -94,6 +98,8 @@ def login():
 
         # if user exist, sent to welcomeback page. else disply error
         if rows[0][0] == 1:
+            global USERNAME
+            USERNAME = secured_username
             return redirect(url_for('welcomeback'))
         else:
             return render_template("login.html",
@@ -102,9 +108,26 @@ def login():
     else:
         return render_template("login.html")
 
+@app.route('/logout')
+def logout():
+    global USERNAME
+    USERNAME = None
+    return redirect(url_for('index'))
+
 @app.route('/welcomeback')
 def welcomeback():
-    return render_template("welcomeback.html")
+    if USERNAME:
+        # Query information and pass them to html
+        bill = select_query("""SELECT bill FROM user WHERE username = ?""",
+                            [USERNAME])[0][0]
+        items = select_query("""SELECT id, category, budget, min_bid,
+                                max_bid, ad_url, description, current_cost
+                                FROM campaign WHERE username = ? and active = True""",
+                             [USERNAME])
+    
+        return render_template("welcomeback.html", bill=bill, items=items)
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/modify')
 def modify():
