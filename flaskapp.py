@@ -116,54 +116,60 @@ def logout():
 
 @app.route('/welcomeback')
 def welcomeback():
-    if USERNAME:
-        # Query information and pass them to html
+    # check if the user is logged in
+    if not USERNAME:
+        return redirect(url_for('index'))
+    else:
+        # query information and pass them to html
         bill = select_query("""SELECT bill FROM user WHERE username = ?""",
                             [USERNAME])[0][0]
+        #print bill
+        #print select_query("""SELECT * FROM user""")
+        #print select_query("""SELECT * FROM campaign""")
         items = select_query("""SELECT id, category, budget, min_bid,
                                 max_bid, ad_url, description, current_cost
-                                FROM campaign WHERE username = ? and active = True""",
-                             [USERNAME])
-    
+                                FROM campaign WHERE username = ? AND active = ?""",
+                             [USERNAME, True])
+        
+        # TODO: add feature to deactative the campaign on the sence
+
         return render_template("welcomeback.html", bill=bill, items=items)
-    else:
-        return redirect(url_for('index'))
 
-@app.route('/modify')
-def modify():
-    return render_template("modify.html")
-
-@app.route('/newcampaign')
+@app.route('/newcampaign', methods=['GET', 'POST'])
 def newcampaign():
-    return render_template("newcampaign.html")
+    # check if the user is logged in
+    if not USERNAME:
+        return redirect(url_for('index'))
+    else:
+        if request.method == 'POST':
+            pass
+        else:
+            return render_template("newcampaign.html")
+
+@app.route('/modify/<int:campaign_id>', methods=['GET', 'POST'])
+def modify(campaign_id):
+    # check if the user is logged in
+    if not USERNAME:
+        return redirect(url_for('index'))
+    else:
+        # TODO: make sure the user own the campaign
+        return render_template("modify.html")
 
 @app.route('/payment')
 def payment():
-    return render_template("payment.html")
+    # check if the user is logged in
+    if not USERNAME:
+        return redirect(url_for('index'))
+    else:
+        return render_template("payment.html")
 
 @app.route('/bill')
 def bill():
-    return render_template("bill.html")
-
-
-@app.route('/countme/<input_str>')
-def count_me(input_str):
-    input_counter = Counter(input_str)
-    response = []
-    for letter, count in input_counter.most_common():
-        response.append('"{}": {}'.format(letter, count))
-    return '<br>'.join(response)
-
-@app.route("/viewdb")
-def viewdb():
-    rows = execute_query("""SELECT * FROM natlpark""")
-    return '<br>'.join(str(row) for row in rows)
-
-@app.route("/state/<state>")
-def sortby(state):
-    rows = execute_query("""SELECT * FROM natlpark WHERE state = ?""",
-                         [state.title()])
-    return '<br>'.join(str(row) for row in rows)
+    # check if the user is logged in
+    if not USERNAME:
+        return redirect(url_for('index'))
+    else:
+        return render_template("bill.html")
 
 @app.teardown_appcontext
 def close_connection(exception):

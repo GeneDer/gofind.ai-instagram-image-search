@@ -24,13 +24,12 @@ class Campaign(Base):
     min_bid = Column(Numeric(12, 2), nullable=False)
     max_bid = Column(Numeric(12, 2), nullable=False)
     ad_url = Column(String(250), nullable=False)
-    description = Column(String(250))
+    description = Column(String(2000))
     total_show = Column(Integer, nullable=False)
     total_clicks = Column(Integer, nullable=False)
     current_cost = Column(Numeric(12, 2), nullable=False)
     active = Column(Boolean, nullable=False)
-    username = Column(String(250), ForeignKey('user.username'))
-    user = relationship(User)
+    username = Column(String(250), nullable=False)
 
 engine = create_engine('sqlite:///adserver.db')
 
