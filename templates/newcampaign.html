@@ -18,8 +18,9 @@
           </td>
           <td>
             <select name="category">
-              {% for i in xrange(len(items)) %}
-                <option value="{{ items[i] }}" {{ selected[i] }} selected=>{{ items[i] }}</option>
+              <p>items</p>
+              {% for i in items %}
+                <option value="{{ i }}" {{ selected[i] }}>{{ i }}</option>
               {% endfor %}
             </select>
           </td>
@@ -39,11 +40,11 @@
         
         <tr>
           <td class="label">
-            Minimun Bidding Price
+            Minimum Bidding Price
           </td>
           <td>
             <input type="text" name="min_bid" value="{{ min_bid }}">
-              </td>
+          </td>
           <td class="error">
             {{error_min}}
           </td>
@@ -55,7 +56,7 @@
           </td>
           <td>
             <input type="text" name="max_bid" value="{{ max_bid }}">
-              </td>
+          </td>
           <td class="error">
             {{error_max}}
           </td>
@@ -78,22 +79,7 @@
             Description
           </td>
           <td>
-            <input type="text" name="min_bid" value="{{ min_bid }}">
-              </td>
-          <td class="error">
-            {{error_min}}
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="label">
-            Minimun Bidding Price
-          </td>
-          <td>
-            <input type="text" name="min_bid" value="{{ min_bid }}">
-              </td>
-          <td class="error">
-            {{error_min}}
+            <input type="text" name="description" value="{{ description }}">
           </td>
         </tr>
       </table>

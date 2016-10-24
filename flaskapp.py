@@ -8,6 +8,9 @@ from flask import Flask, request, g, render_template, redirect, url_for
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
 USERNAME = None
 CATEGORY = ['Top', 'Bottom', 'Shoes', 'Accessory']
+SELECTED = {}
+for i in CATEGORY:
+    SELECTED[i] = ''
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -123,9 +126,6 @@ def welcomeback():
         # query information and pass them to html
         bill = select_query("""SELECT bill FROM user WHERE username = ?""",
                             [USERNAME])[0][0]
-        #print bill
-        #print select_query("""SELECT * FROM user""")
-        #print select_query("""SELECT * FROM campaign""")
         items = select_query("""SELECT id, category, budget, min_bid,
                                 max_bid, ad_url, description, current_cost
                                 FROM campaign WHERE username = ? AND active = ?""",
@@ -141,11 +141,92 @@ def newcampaign():
     if not USERNAME:
         return redirect(url_for('index'))
     else:
-        selected = ['selected'] + ['']*(len(CATEGORY) - 1)
+        # selected help the page determine which category was selected
+        # it is set to be the first item in CATEGORY by default
         if request.method == 'POST':
-            # revise order
-            pass
+            category = request.form['category']
+            budget = request.form['budget']
+            min_bid = request.form['min_bid']
+            max_bid = request.form['max_bid']
+            ad_url = request.form['ad_url']
+            description = request.form['description']
+            print category, budget, min_bid, max_bid, ad_url, description
+            
+            error_budget = ""
+            error_min = ""
+            error_max = ""
+            error_ad_url = ""
+
+            # check errors
+            if budget == "":
+                error_budget = "The Budget field is empty!"
+            elif not budget.isdigit():
+                error_budget = "Budget is not a number!"
+            else:
+                budget = float(budget)
+                if budget < 0:
+                    error_budget = "Budget is negative!"
+                    
+            if min_bid == "":
+                error_min = "The Minimun Bidding Price field is empty!"
+            elif not min_bid.isdigit():
+                error_min = "Minimun Bidding Price is not a number!"
+            else:
+                min_bid = float(min_bid)
+                if min_bid < 0:
+                    error_min = "Minimun Bidding Price is negative!"
+                elif error_budget == "":
+                    if min_bid > budget:
+                        error_min = "Minimun Bidding Price is greater than budget!"
+                    
+            if max_bid == "":
+                error_max = "The Maximum Bidding Price field is empty!"
+            elif not max_bid.isdigit():
+                error_max = "Maximum Bidding Price is not a number!"
+            else:
+                max_bid = float(max_bid)
+                if max_bid < 0:
+                    error_max = "Maximum Bidding Price is negative!"
+                elif error_min_bid == "":
+                    if min_bid > max_bid:
+                        error_max = "Maximum Bidding Price is less than Minimun Bidding Price !"
+
+            if ad_url == "":
+                error_ad_url = "The Ad url field is empty!"
+
+            # NOTE: the validity of the url is not checked!!!
+            # This is becasue it can be a link to another database or
+            # to an image online. This part need to be specified.
+            # ALSO NOTE: description field is optional by design
+
+            if error_budget != "" or error_min != "" or error_max != "" or error_ad_url != "":
+                selected = SELECTED
+                selected = {category:'selected'}
+                return render_template("newcampaign.html", items=CATEGORY,
+                                       selected=selected, category=category,
+                                       budget=budget, min_bid=min_bid,
+                                       max_bid=max_bid, ad_url=ad_url,
+                                       description=description,
+                                       error_budget=error_budget,
+                                       error_min=error_min,
+                                       error_max=error_max,
+                                       error_ad_url=error_ad_url)
+            else:
+                # insert new campaign into the database with all the defalut values
+                insert_query("""INSERT INTO campaign (category, budget, min_bid,
+                                max_bid, ad_url, description, total_show,
+                                total_clicks, current_cost, active, username)
+                                VALUES (?,?,?,?,?,?,0,0,0,?,?)""",
+                             [category, budget, min_bid, max_bid, ad_url,
+                              description, True,USERNAME])
+                # TODO: redirect to the welcomback page
+                return redirect(url_for('welcomeback'))
+            
         else:
+            selected = SELECTED
+            selected = {CATEGORY[0]:'selected'}
+            print CATEGORY, selected
+            
             return render_template("newcampaign.html", items=CATEGORY, selected=selected)
 
 @app.route('/modify/<int:campaign_id>', methods=['GET', 'POST'])
