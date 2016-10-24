@@ -34,7 +34,7 @@
       {% for i in items %}
         <tr>
           {% for j in i %}
-            <td>j</td>
+          <td>{{ j }}</td>
           {% endfor %}
           <td> <a href = '{{ url_for('modify', campaign_id=i[0]) }}'>Modify</a> </td>
         </tr>

@@ -32,6 +32,26 @@ def make_secure_username(val):
 def make_secure_password(val):
     return hmac.new(secret2, val).hexdigest()
 
+def number_checking(s):
+    # a method that checks whether the string can be converted to int or float
+    try:
+        int(s)
+        return True
+    except:
+        x = s.split('.')
+        if len(x) == 2:
+            try:
+                x0 = int(x[0])
+                x1 = int(x[1])
+                if x1 >= 0:
+                    return True
+                else:
+                    return False
+            except:
+                return False
+        else:
+            return False
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -130,7 +150,7 @@ def welcomeback():
                                 max_bid, ad_url, description, current_cost
                                 FROM campaign WHERE username = ? AND active = ?""",
                              [USERNAME, True])
-        
+        print items
         # TODO: add feature to deactative/actative the campaign on the sence
 
         return render_template("welcomeback.html", bill=bill, items=items)
@@ -150,6 +170,7 @@ def newcampaign():
             max_bid = request.form['max_bid']
             ad_url = request.form['ad_url']
             description = request.form['description']
+            print type(category), type(budget), type(min_bid), type(max_bid), type(ad_url), type(description)
             print category, budget, min_bid, max_bid, ad_url, description
             
             error_budget = ""
@@ -160,7 +181,7 @@ def newcampaign():
             # check errors
             if budget == "":
                 error_budget = "The Budget field is empty!"
-            elif not budget.isdigit():
+            elif not number_checking(budget):
                 error_budget = "Budget is not a number!"
             else:
                 budget = float(budget)
@@ -169,7 +190,7 @@ def newcampaign():
                     
             if min_bid == "":
                 error_min = "The Minimun Bidding Price field is empty!"
-            elif not min_bid.isdigit():
+            elif not number_checking(min_bid):
                 error_min = "Minimun Bidding Price is not a number!"
             else:
                 min_bid = float(min_bid)
@@ -181,13 +202,13 @@ def newcampaign():
                     
             if max_bid == "":
                 error_max = "The Maximum Bidding Price field is empty!"
-            elif not max_bid.isdigit():
+            elif not number_checking(max_bid):
                 error_max = "Maximum Bidding Price is not a number!"
             else:
                 max_bid = float(max_bid)
                 if max_bid < 0:
                     error_max = "Maximum Bidding Price is negative!"
-                elif error_min_bid == "":
+                elif error_min == "":
                     if min_bid > max_bid:
                         error_max = "Maximum Bidding Price is less than Minimun Bidding Price !"
 
