@@ -150,7 +150,7 @@ def welcomeback():
                                 max_bid, ad_url, description, current_cost
                                 FROM campaign WHERE username = ? AND active = ?""",
                              [USERNAME, True])
-        print items
+        
         # TODO: add feature to deactative/actative the campaign on the sence
 
         return render_template("welcomeback.html", bill=bill, items=items)
@@ -170,8 +170,6 @@ def newcampaign():
             max_bid = request.form['max_bid']
             ad_url = request.form['ad_url']
             description = request.form['description']
-            print type(category), type(budget), type(min_bid), type(max_bid), type(ad_url), type(description)
-            print category, budget, min_bid, max_bid, ad_url, description
             
             error_budget = ""
             error_min = ""
@@ -240,24 +238,108 @@ def newcampaign():
                                 VALUES (?,?,?,?,?,?,0,0,0,?,?)""",
                              [category, budget, min_bid, max_bid, ad_url,
                               description, True,USERNAME])
-                # TODO: redirect to the welcomback page
+
                 return redirect(url_for('welcomeback'))
             
         else:
             selected = SELECTED
             selected = {CATEGORY[0]:'selected'}
-            print CATEGORY, selected
             
             return render_template("newcampaign.html", items=CATEGORY, selected=selected)
 
 @app.route('/modify/<int:campaign_id>', methods=['GET', 'POST'])
 def modify(campaign_id):
     # check if the user is logged in
-    if not USERNAME:
+    rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
+                        [USERNAME, campaign_id])
+    if len(rows) != 1:
         return redirect(url_for('index'))
     else:
-        # TODO: make sure the user owns the campaign
-        return render_template("modify.html")
+        if request.method == 'POST':
+            category = request.form['category']
+            budget = request.form['budget']
+            min_bid = request.form['min_bid']
+            max_bid = request.form['max_bid']
+            ad_url = request.form['ad_url']
+            description = request.form['description']
+            
+            error_budget = ""
+            error_min = ""
+            error_max = ""
+            error_ad_url = ""
+
+            # check errors
+            if budget == "":
+                error_budget = "The Budget field is empty!"
+            elif not number_checking(budget):
+                error_budget = "Budget is not a number!"
+            else:
+                budget = float(budget)
+                if budget < 0:
+                    error_budget = "Budget is negative!"
+                    
+            if min_bid == "":
+                error_min = "The Minimun Bidding Price field is empty!"
+            elif not number_checking(min_bid):
+                error_min = "Minimun Bidding Price is not a number!"
+            else:
+                min_bid = float(min_bid)
+                if min_bid < 0:
+                    error_min = "Minimun Bidding Price is negative!"
+                elif error_budget == "":
+                    if min_bid > budget:
+                        error_min = "Minimun Bidding Price is greater than budget!"
+                    
+            if max_bid == "":
+                error_max = "The Maximum Bidding Price field is empty!"
+            elif not number_checking(max_bid):
+                error_max = "Maximum Bidding Price is not a number!"
+            else:
+                max_bid = float(max_bid)
+                if max_bid < 0:
+                    error_max = "Maximum Bidding Price is negative!"
+                elif error_min == "":
+                    if min_bid > max_bid:
+                        error_max = "Maximum Bidding Price is less than Minimun Bidding Price !"
+
+            if ad_url == "":
+                error_ad_url = "The Ad url field is empty!"
+
+            # NOTE: the validity of the url is not checked!!!
+            # This is becasue it can be a link to another database or
+            # to an image online. This part need to be specified.
+            # ALSO NOTE: description field is optional by design
+
+            if error_budget != "" or error_min != "" or error_max != "" or error_ad_url != "":
+                selected = SELECTED
+                selected = {category:'selected'}
+                return render_template("newcampaign.html", items=CATEGORY,
+                                       selected=selected, category=category,
+                                       budget=budget, min_bid=min_bid,
+                                       max_bid=max_bid, ad_url=ad_url,
+                                       description=description,
+                                       error_budget=error_budget,
+                                       error_min=error_min,
+                                       error_max=error_max,
+                                       error_ad_url=error_ad_url)
+            else:
+                # insert new campaign into the database with all the defalut values
+                insert_query("""UPDATE campaign SET category = ?, budget = ?,
+                                min_bid = ?, max_bid = ?, ad_url = ?,
+                                description = ? WHERE username = ? and id = ?""",
+                             [category, budget, min_bid, max_bid, ad_url,
+                              description, USERNAME, campaign_id])
+
+                return redirect(url_for('welcomeback'))
+            
+        else:
+            rows = rows[0]
+            selected = SELECTED
+            selected = {rows[1]:'selected'}
+            
+            return render_template("modify.html", items=CATEGORY, selected=selected,
+                                   budget=rows[2], min_bid=rows[3], max_bid=rows[4],
+                                   ad_url=rows[5], description=rows[6])
 
 @app.route('/payment')
 def payment():
