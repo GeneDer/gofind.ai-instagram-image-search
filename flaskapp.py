@@ -340,6 +340,13 @@ def modify(campaign_id):
             return render_template("modify.html", items=CATEGORY, selected=selected,
                                    budget=rows[2], min_bid=rows[3], max_bid=rows[4],
                                    ad_url=rows[5], description=rows[6])
+@app.route('/bill')
+def bill():
+    # check if the user is logged in
+    if not USERNAME:
+        return redirect(url_for('index'))
+    else:
+        return render_template("bill.html")
 
 @app.route('/payment')
 def payment():
@@ -349,13 +356,6 @@ def payment():
     else:
         return render_template("payment.html")
 
-@app.route('/bill')
-def bill():
-    # check if the user is logged in
-    if not USERNAME:
-        return redirect(url_for('index'))
-    else:
-        return render_template("bill.html")
 
 @app.teardown_appcontext
 def close_connection(exception):
