@@ -37,7 +37,7 @@
           {% for j in i %}
             <td>{{ j }}</td>
           {% endfor %}
-          <td> <a href = '{{ url_for('deactive', campaign_id=i[0]) }}'>Deactivate</a> </td>
+          <td> <a href = '{{ url_for('deactive', campaign_id=i[0], redirect_id=1) }}'>Deactivate</a> </td>
           <td> <a href = '{{ url_for('modify', campaign_id=i[0]) }}'>Modify</a> </td>
         </tr>
       {% endfor %}
@@ -65,7 +65,7 @@
         {% for j in i %}
         <td>{{ j }}</td>
         {% endfor %}
-        <td> <a href = '{{ url_for('active', campaign_id=i[0]) }}'>Activate</a> </td>
+        <td> <a href = '{{ url_for('active', campaign_id=i[0], redirect_id=1) }}'>Activate</a> </td>
         <td> <a href = '{{ url_for('modify', campaign_id=i[0]) }}'>Modify</a> </td>
       </tr>
       {% endfor %}

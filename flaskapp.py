@@ -344,8 +344,8 @@ def modify(campaign_id):
                                    budget=rows[2], min_bid=rows[3], max_bid=rows[4],
                                    ad_url=rows[5], description=rows[6])
 
-@app.route('/active/<int:campaign_id>')
-def active(campaign_id):
+@app.route('/active/<int:campaign_id>/<int:redirect_id>')
+def active(campaign_id, redirect_id):
     # check if the user is logged in
     rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
                         [USERNAME, campaign_id])
@@ -357,10 +357,13 @@ def active(campaign_id):
                         WHERE username = ? and id = ?""",
                      [True, USERNAME, campaign_id])
 
-        return redirect(url_for('welcomeback'))
+        if redirect_id == 1:
+            return redirect(url_for('welcomeback'))
+        else:
+            return redirect(url_for('bill'))
 
-@app.route('/deactive/<int:campaign_id>')
-def deactive(campaign_id):
+@app.route('/deactive/<int:campaign_id>/<int:redirect_id>')
+def deactive(campaign_id, redirect_id):
     # check if the user is logged in
     rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
                         [USERNAME, campaign_id])
@@ -371,8 +374,10 @@ def deactive(campaign_id):
         insert_query("""UPDATE campaign SET active = ?
                         WHERE username = ? and id = ?""",
                      [False, USERNAME, campaign_id])
-
-        return redirect(url_for('welcomeback'))
+        if redirect_id == 1:
+            return redirect(url_for('welcomeback'))
+        else:
+            return redirect(url_for('bill'))
 
 @app.route('/bill')
 def bill():
@@ -380,7 +385,16 @@ def bill():
     if not USERNAME:
         return redirect(url_for('index'))
     else:
-        return render_template("bill.html")
+        # query information and pass them to html
+        bill = select_query("""SELECT bill FROM user WHERE username = ?""",
+                            [USERNAME])[0][0]
+        items = select_query("""SELECT id, budget, total_show, total_clicks,
+                                current_cost, active
+                                FROM campaign WHERE username = ?
+                                AND current_cost >= 0""",
+                             [USERNAME])
+
+        return render_template("bill.html", bill=bill, items=items)
 
 @app.route('/payment')
 def payment():

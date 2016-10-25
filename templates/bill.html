@@ -20,16 +20,20 @@
         <td>Budget</td>
         <td>Total Show</td>
         <td>Total Clicks</td>
-        <td>Ad url</td>
-        <td>Description</td>
         <td>Current Cost</td>
         <td> </td>
         <td> </td>
       </tr>
       {% for i in items %}
       <tr>
-        {% for j in i %}
-        <td>{{ j }}</td>
+        {% for j in range(i|length) %}
+          {% if j != 5 %}
+            <td>{{ i[j] }}</td>
+          {% elif i[j] == 0 %}
+            <td> <a href = '{{ url_for('active', campaign_id=i[0], redirect_id=2) }}'>Activate</a> </td>
+          {% else %}
+            <td> <a href = '{{ url_for('deactive', campaign_id=i[0], redirect_id=2) }}'>Deactivate</a> </td>
+          {% endif %}
         {% endfor %}
         <td> <a href = '{{ url_for('modify', campaign_id=i[0]) }}'>Modify</a> </td>
       </tr>
