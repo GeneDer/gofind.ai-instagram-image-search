@@ -9,6 +9,32 @@
     <h1>Gofind.ai Ad Server</h1>
     
     <h2>Bill</h2>
+    
+    <a href = '{{ url_for('payment') }}'>Pay Bill: {{ bill }}</a>
+    
+    <h3>Existing Campaigns</h3>
+    
+    <table border="1" width="100%" height="100">
+      <tr>
+        <td>Campaign ID</td>
+        <td>Budget</td>
+        <td>Total Show</td>
+        <td>Total Clicks</td>
+        <td>Ad url</td>
+        <td>Description</td>
+        <td>Current Cost</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      {% for i in items %}
+      <tr>
+        {% for j in i %}
+        <td>{{ j }}</td>
+        {% endfor %}
+        <td> <a href = '{{ url_for('modify', campaign_id=i[0]) }}'>Modify</a> </td>
+      </tr>
+      {% endfor %}
+    </table>
 
     <a href = '{{ url_for('welcomeback') }}'>Cancel</a>
   </body>

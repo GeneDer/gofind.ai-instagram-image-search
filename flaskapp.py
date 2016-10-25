@@ -146,14 +146,17 @@ def welcomeback():
         # query information and pass them to html
         bill = select_query("""SELECT bill FROM user WHERE username = ?""",
                             [USERNAME])[0][0]
-        items = select_query("""SELECT id, category, budget, min_bid,
-                                max_bid, ad_url, description, current_cost
-                                FROM campaign WHERE username = ? AND active = ?""",
-                             [USERNAME, True])
-        
-        # TODO: add feature to deactative/actative the campaign on the sence
+        items1 = select_query("""SELECT id, category, budget, min_bid,
+                                 max_bid, ad_url, description, current_cost
+                                 FROM campaign WHERE username = ? AND active = ?""",
+                              [USERNAME, True])
 
-        return render_template("welcomeback.html", bill=bill, items=items)
+        items2 = select_query("""SELECT id, category, budget, min_bid,
+                                 max_bid, ad_url, description, current_cost
+                                 FROM campaign WHERE username = ? AND active = ?""",
+                              [USERNAME, False])
+        
+        return render_template("welcomeback.html", bill=bill, items1=items1, items2=items2)
 
 @app.route('/newcampaign', methods=['GET', 'POST'])
 def newcampaign():
@@ -323,7 +326,7 @@ def modify(campaign_id):
                                        error_max=error_max,
                                        error_ad_url=error_ad_url)
             else:
-                # insert new campaign into the database with all the defalut values
+                # update the campaign in the database with new values
                 insert_query("""UPDATE campaign SET category = ?, budget = ?,
                                 min_bid = ?, max_bid = ?, ad_url = ?,
                                 description = ? WHERE username = ? and id = ?""",
@@ -340,6 +343,37 @@ def modify(campaign_id):
             return render_template("modify.html", items=CATEGORY, selected=selected,
                                    budget=rows[2], min_bid=rows[3], max_bid=rows[4],
                                    ad_url=rows[5], description=rows[6])
+
+@app.route('/active/<int:campaign_id>')
+def active(campaign_id):
+    # check if the user is logged in
+    rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
+                        [USERNAME, campaign_id])
+    if len(rows) != 1:
+        return redirect(url_for('index'))
+    else:
+        # active the campaign
+        insert_query("""UPDATE campaign SET active = ?
+                        WHERE username = ? and id = ?""",
+                     [True, USERNAME, campaign_id])
+
+        return redirect(url_for('welcomeback'))
+
+@app.route('/deactive/<int:campaign_id>')
+def deactive(campaign_id):
+    # check if the user is logged in
+    rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
+                        [USERNAME, campaign_id])
+    if len(rows) != 1:
+        return redirect(url_for('index'))
+    else:
+        # active the campaign
+        insert_query("""UPDATE campaign SET active = ?
+                        WHERE username = ? and id = ?""",
+                     [False, USERNAME, campaign_id])
+
+        return redirect(url_for('welcomeback'))
+
 @app.route('/bill')
 def bill():
     # check if the user is logged in
