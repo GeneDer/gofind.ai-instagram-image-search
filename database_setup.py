@@ -31,6 +31,21 @@ class Campaign(Base):
     active = Column(Boolean, nullable=False)
     username = Column(String(250), nullable=False)
 
+class Customer(Base):
+    __tablename__ = 'customer'
+
+    username = Column(String(250), primary_key=True)
+    password = Column(String(250), nullable=False)
+
+class Ad_request(Base):
+    __tablename__ = 'ad_request'
+
+    id = Column(Integer, primary_key=True)
+    request_key = Column(Integer, nullable=False)
+    campaign_id = Column(Integer, nullable=False)
+    bid_price = Column(Numeric(12, 2), nullable=False)
+    timestamp = Column(Integer, nullable=False)
+
 engine = create_engine('sqlite:///adserver.db')
 
 

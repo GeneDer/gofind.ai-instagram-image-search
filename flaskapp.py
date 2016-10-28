@@ -3,7 +3,7 @@ import csv
 import sqlite3
 import hmac
 
-from flask import Flask, request, g, render_template, redirect, url_for
+from flask import Flask, request, g, render_template, redirect, url_for, jsonify
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
 USERNAME = None
@@ -404,7 +404,67 @@ def payment():
     else:
         return render_template("payment.html")
 
+@app.route('/ad_request/<username>/<password>/<catogory>/JSON')
+def ad_request(username, password, catogory):
+    rows = select_query("""SELECT COUNT(*) FROM customer WHERE username = ?
+                           AND password = ?""",
+                        [username, password])
+    json_out = {'id': None,
+                'key': None,
+                'url': None}
+    # if customer exist, check for the available campaign
+    if rows[0][0] == 1:
 
+        # logic to get the best bid
+        max_bids = 'TODO'
+
+        
+        max_campaign = select_query("""SELECT id,  FROM campaign
+                                       WHERE category = ?
+                                       AND active = ?
+                                       HAVING max_bid == MAX(max_bid)""",
+                                    [catogory, True])
+        
+
+        
+        json_out = {'id': request_id,
+                    'key': random_key,
+                    'url': ad_url}
+        
+        # TODO: update total click and add it to the ad_request
+    
+    return jsonify(json_out)
+
+@app.route('/ad_passes/<request_id>/<random_key>/JSON')
+def ad_passes(request_id, random_key):
+    
+    # get campaign id and delete the ad request
+    campaign_id = select_query("""SELECT campaign_id, bid_price
+                                  FROM ad_request
+                                  WHERE id = ? and request_key = ?""",
+                               [request_id, random_key])
+    insert_query("""DELETE FROM  ad_request
+                    WHERE id = ? and request_key = ?""",
+                 [request_id, random_key])
+    
+    # if campaign_id exist, update bill, total_show, and current_cost
+    if campaign_id:
+
+        
+        # TODO: check for the budget and set campaign inactivate if not
+        # enough money.
+        print 'hello'
+    else:
+        print 'world'
+
+@app.route('/ad_fails/<request_id>/<random_key>/JSON')
+def ad_fails(request_id, random_key):
+    # remove the ad_reauest
+    insert_query("""DELETE FROM  ad_request
+                    WHERE id = ? and request_key = ?""",
+                 [request_id, random_key])
+    return jsonify("action complete")
+    
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, 'db', None)
