@@ -2,8 +2,10 @@ from collections import Counter
 import csv
 import sqlite3
 import hmac
+import random
+import time
 
-from flask import Flask, request, g, render_template, redirect, url_for, jsonify
+from flask import Flask, request, g, render_template, redirect, url_for, jsonify, abort
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
 USERNAME = None
@@ -406,34 +408,84 @@ def payment():
 
 @app.route('/ad_request/<username>/<password>/<catogory>/JSON')
 def ad_request(username, password, catogory):
+
+    ####################################
+    # for testing purpose only, mack sure to remove the hashing
     rows = select_query("""SELECT COUNT(*) FROM customer WHERE username = ?
                            AND password = ?""",
-                        [username, password])
-    json_out = {'id': None,
-                'key': None,
-                'url': None}
+                        [make_secure_username(username),
+                         make_secure_password(password)])
+    ####################################
+    
+    request_id = None
+    request_key = None
+    request_url = None
+    request_bid = None
+    request_show = None
     # if customer exist, check for the available campaign
     if rows[0][0] == 1:
-
-        # logic to get the best bid
-        max_bids = 'TODO'
-
-        
-        max_campaign = select_query("""SELECT id,  FROM campaign
-                                       WHERE category = ?
-                                       AND active = ?
-                                       HAVING max_bid == MAX(max_bid)""",
+        max_bids = select_query("""SELECT max_bid, count(*)
+                                   FROM campaign
+                                   WHERE category = ? AND active = ?
+                                   GROUP BY max_bid
+                                   ORDER BY max_bid DESC
+                                   LIMIT 2""",
                                     [catogory, True])
-        
 
+        # if there are campaigns in this category
+        if len(max_bids) > 0:
+
+            # if more than one campaign with highest bid,
+            if max_bids[0][1] > 1:
+                # randomly select one highest bid as the winner
+                winner = select_query("""SELECT id, ad_url, total_show
+                                         FROM campaign
+                                         WHERE category = ? AND active = ?
+                                         AND max_bid = ?
+                                         ORDER BY RAND()
+                                         LIMIT 1""",
+                                      [catogory, True, max_bids[0][0]])
+                request_bid = max_bids[0][0]
+
+            # if there are only one campaign
+            elif len(max_bids) == 1:
+                # only one active campaign, just return the min_bid
+                winner = select_query("""SELECT id, ad_url, total_show, min_bid
+                                         FROM campaign
+                                         WHERE category = ? AND active = ?
+                                         AND max_bid = ?""",
+                                      [catogory, True, max_bids[0][0]])
+                request_bid = winner[0][3]
+
+            # else its the case for one highest bidder and some second bidders
+            else:
+                # only one active campaign with highest bid, just return
+                # max(min_bid of the selected bid, second highest bid)
+                winner = select_query("""SELECT id, ad_url, total_show, min_bid
+                                         FROM campaign
+                                         WHERE category = ? AND active = ?
+                                         AND max_bid = ?""",
+                                      [catogory, True, max_bids[0][0]])
+                request_bid = max(winner[0][3], max_bids[1][0])
+
+            # all of them are setting id, url, show, and key the same way
+            request_id = winner[0][0]
+            request_url = winner[0][1]
+            request_show = winner[0][2] + 1
+            request_key = random.randint(-2000000000, 2000000000)
         
-        json_out = {'id': request_id,
-                    'key': random_key,
-                    'url': ad_url}
-        
-        # TODO: update total click and add it to the ad_request
-    
-    return jsonify(json_out)
+            # update total show and add it to the ad_reques
+            insert_query("""UPDATE campaign
+                            SET total_show = ?
+                            WHERE id = ?""",
+                         [request_show, request_id])
+            
+            insert_query("""INSERT INTO ad_request
+                            (request_key, campaign_id, bid_price, timestamp)
+                            VALUES (?, ?, ?, ?)""",
+                         [request_key, request_id, request_bid, time.time()])        
+    #print select_query("""SELECT * FROM ad_request""",[])
+    return jsonify({'id': request_id, 'key': request_key, 'url': request_url})
 
 @app.route('/ad_passes/<request_id>/<random_key>/JSON')
 def ad_passes(request_id, random_key):
@@ -456,6 +508,7 @@ def ad_passes(request_id, random_key):
         print 'hello'
     else:
         print 'world'
+        abort(404)
 
 @app.route('/ad_fails/<request_id>/<random_key>/JSON')
 def ad_fails(request_id, random_key):
@@ -481,7 +534,7 @@ def insert_query(query, args=()):
     conn = get_db()
     conn.execute(query, args)
     conn.commit()
-    conn.close()
+    #conn.close()
 
 if __name__ == '__main__':
   app.run()
