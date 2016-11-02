@@ -406,7 +406,7 @@ def payment():
     else:
         return render_template("payment.html")
 
-@app.route('/ad_request/<username>/<password>/<catogory>/JSON')
+@app.route('/ad_request/<username>/<password>/<catogory>')
 def ad_request(username, password, catogory):
 
     ####################################
@@ -487,15 +487,17 @@ def ad_request(username, password, catogory):
     #print select_query("""SELECT * FROM ad_request""",[])
     return jsonify({'id': request_id, 'key': request_key, 'url': request_url})
 
-@app.route('/ad_passes/<request_id>/<random_key>/JSON')
+@app.route('/ad_passes/<request_id>/<random_key>')
 def ad_passes(request_id, random_key):
-    
+    print select_query("""SELECT * FROM ad_request""",[])
+    print request_id, random_key
+    print type(request_id), type(random_key)
     # get campaign id and delete the ad request
     campaign_id = select_query("""SELECT campaign_id, bid_price
                                   FROM ad_request
                                   WHERE id = ? and request_key = ?""",
                                [request_id, random_key])
-    insert_query("""DELETE FROM  ad_request
+    insert_query("""DELETE FROM ad_request
                     WHERE id = ? and request_key = ?""",
                  [request_id, random_key])
     
@@ -507,13 +509,12 @@ def ad_passes(request_id, random_key):
         # enough money.
         print 'hello'
     else:
-        print 'world'
         abort(404)
 
-@app.route('/ad_fails/<request_id>/<random_key>/JSON')
+@app.route('/ad_fails/<request_id>/<random_key>')
 def ad_fails(request_id, random_key):
     # remove the ad_reauest
-    insert_query("""DELETE FROM  ad_request
+    insert_query("""DELETE FROM ad_request
                     WHERE id = ? and request_key = ?""",
                  [request_id, random_key])
     return jsonify("action complete")
