@@ -158,7 +158,7 @@ def welcomeback():
                                  FROM campaign WHERE username = ? AND active = ?""",
                               [USERNAME, False])
         
-        return render_template("welcomeback.html", bill=bill, items1=items1, items2=items2)
+        return render_template("welcomeback.html", bill=float(bill), items1=items1, items2=items2)
 
 @app.route('/newcampaign', methods=['GET', 'POST'])
 def newcampaign():
@@ -396,7 +396,7 @@ def bill():
                                 AND current_cost >= 0""",
                              [USERNAME])
 
-        return render_template("bill.html", bill=bill, items=items)
+        return render_template("bill.html", bill=float(bill), items=items)
 
 @app.route('/payment')
 def payment():
@@ -423,7 +423,7 @@ def ad_request(username, password, catogory):
     request_bid = None
     request_show = None
     # if customer exist, check for the available campaign
-    if rows[0][0] == 1:
+    if rows[0][0] == 1 and catogory in CATEGORY:
         max_bids = select_query("""SELECT max_bid, count(*)
                                    FROM campaign
                                    WHERE category = ? AND active = ?
@@ -484,7 +484,7 @@ def ad_request(username, password, catogory):
                             (request_key, campaign_id, bid_price, timestamp)
                             VALUES (?, ?, ?, ?)""",
                          [request_key, request_id, request_bid, time.time()])        
-    #print select_query("""SELECT * FROM ad_request""",[])
+
     return jsonify({'id': request_id, 'key': request_key, 'url': request_url})
 
 @app.route('/ad_passes/<request_id>/<random_key>')
@@ -493,29 +493,57 @@ def ad_passes(request_id, random_key):
     print request_id, random_key
     print type(request_id), type(random_key)
     # get campaign id and delete the ad request
-    campaign_id = select_query("""SELECT campaign_id, bid_price
+    bid_price = select_query("""SELECT bid_price
                                   FROM ad_request
-                                  WHERE id = ? and request_key = ?""",
+                                  WHERE campaign_id = ?
+                                  AND request_key = ?""",
                                [request_id, random_key])
     insert_query("""DELETE FROM ad_request
-                    WHERE id = ? and request_key = ?""",
+                    WHERE campaign_id = ? AND request_key = ?""",
                  [request_id, random_key])
-    
-    # if campaign_id exist, update bill, total_show, and current_cost
-    if campaign_id:
+    print bid_price
+    # if campaign_id exist, update bill, total_click, and current_cost
+    if bid_price:
+        campaign_info = select_query("""SELECT budget, max_bid,
+                                        total_clicks, current_cost,
+                                        username
+                                        FROM campaign
+                                        WHERE id = ?""",
+                                     [request_id])
+        insert_query("""UPDATE user
+                        SET bill = bill + ?
+                        WHERE username = ?""",
+                     [bid_price[0][0],
+                      campaign_info[0][4]])
 
-        
-        # TODO: check for the budget and set campaign inactivate if not
-        # enough money.
-        print 'hello'
-    else:
-        abort(404)
+        # check for the budget and set campaign inactivate if not enough money
+        current_cost = campaign_info[0][3] + bid_price[0][0]
+        if current_cost + campaign_info[0][1] > campaign_info[0][0]:
+            insert_query("""UPDATE campaign
+                            SET total_clicks = ?,
+                            current_cost = ?,
+                            active = ?
+                            WHERE id = ?""",
+                         [campaign_info[0][2] + 1,
+                          campaign_info[0][3] + bid_price[0][0],
+                          request_id, False])
+        else:
+            insert_query("""UPDATE campaign
+                            SET total_clicks = ?,
+                            current_cost = ?
+                            WHERE id = ?""",
+                         [campaign_info[0][2] + 1,
+                          campaign_info[0][3] + bid_price[0][0],
+                          request_id])
+    
+    return jsonify("action complete")
 
 @app.route('/ad_fails/<request_id>/<random_key>')
 def ad_fails(request_id, random_key):
     # remove the ad_reauest
     insert_query("""DELETE FROM ad_request
-                    WHERE id = ? and request_key = ?""",
+                    WHERE id = ?
+                    AND campaign_id = ?""",
                  [request_id, random_key])
     return jsonify("action complete")
     
