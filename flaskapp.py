@@ -6,9 +6,10 @@ import random
 import time
 
 from flask import Flask, request, g, render_template, redirect, url_for, jsonify, abort
+from flask import session as login_session
+
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
-USERNAME = None
 CATEGORY = ['Top', 'Bottom', 'Shoes', 'Accessory']
 SELECTED = {}
 for i in CATEGORY:
@@ -100,13 +101,12 @@ def signup():
         insert_query("""INSERT INTO user (username, password, bill)
                         VALUES (?,?,0)""",
                       [secured_username, secured_password])
-        global USERNAME
-        USERNAME = secured_username
+        login_session['username'] = secured_username
         return redirect(url_for('welcomeback'))
     else:
         return render_template("signup.html")
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         # retrive + url encoding for all fields
@@ -123,8 +123,7 @@ def login():
 
         # if user exist, sent to welcomeback page. else disply error
         if rows[0][0] == 1:
-            global USERNAME
-            USERNAME = secured_username
+            login_session['username'] = secured_username
             return redirect(url_for('welcomeback'))
         else:
             return render_template("login.html",
@@ -135,35 +134,34 @@ def login():
 
 @app.route('/logout')
 def logout():
-    global USERNAME
-    USERNAME = None
+    login_session.pop('username')
     return redirect(url_for('index'))
 
 @app.route('/welcomeback')
 def welcomeback():
     # check if the user is logged in
-    if not USERNAME:
+    if 'username' not in login_session:
         return redirect(url_for('index'))
     else:
         # query information and pass them to html
         bill = select_query("""SELECT bill FROM user WHERE username = ?""",
-                            [USERNAME])[0][0]
+                            [login_session['username']])[0][0]
         items1 = select_query("""SELECT id, category, budget, min_bid,
                                  max_bid, ad_url, description, current_cost
                                  FROM campaign WHERE username = ? AND active = ?""",
-                              [USERNAME, True])
+                              [login_session['username'], True])
 
         items2 = select_query("""SELECT id, category, budget, min_bid,
                                  max_bid, ad_url, description, current_cost
                                  FROM campaign WHERE username = ? AND active = ?""",
-                              [USERNAME, False])
+                              [login_session['username'], False])
         
         return render_template("welcomeback.html", bill=float(bill), items1=items1, items2=items2)
 
 @app.route('/newcampaign', methods=['GET', 'POST'])
 def newcampaign():
     # check if the user is logged in
-    if not USERNAME:
+    if 'username' not in login_session:
         return redirect(url_for('index'))
     else:
         # selected help the page determine which category was selected
@@ -242,7 +240,7 @@ def newcampaign():
                                 total_clicks, current_cost, active, username)
                                 VALUES (?,?,?,?,?,?,0,0,0,?,?)""",
                              [category, budget, min_bid, max_bid, ad_url,
-                              description, True,USERNAME])
+                              description, True, login_session['username']])
 
                 return redirect(url_for('welcomeback'))
             
@@ -256,7 +254,7 @@ def newcampaign():
 def modify(campaign_id):
     # check if the user is logged in
     rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
-                        [USERNAME, campaign_id])
+                        [login_session['username'], campaign_id])
     if len(rows) != 1:
         return redirect(url_for('index'))
     else:
@@ -333,7 +331,7 @@ def modify(campaign_id):
                                 min_bid = ?, max_bid = ?, ad_url = ?,
                                 description = ? WHERE username = ? and id = ?""",
                              [category, budget, min_bid, max_bid, ad_url,
-                              description, USERNAME, campaign_id])
+                              description, login_session['username'], campaign_id])
 
                 return redirect(url_for('welcomeback'))
             
@@ -350,14 +348,14 @@ def modify(campaign_id):
 def active(campaign_id, redirect_id):
     # check if the user is logged in
     rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
-                        [USERNAME, campaign_id])
+                        [login_session['username'], campaign_id])
     if len(rows) != 1:
         return redirect(url_for('index'))
     else:
         # active the campaign
         insert_query("""UPDATE campaign SET active = ?
                         WHERE username = ? and id = ?""",
-                     [True, USERNAME, campaign_id])
+                     [True, login_session['username'], campaign_id])
 
         if redirect_id == 1:
             return redirect(url_for('welcomeback'))
@@ -368,14 +366,14 @@ def active(campaign_id, redirect_id):
 def deactive(campaign_id, redirect_id):
     # check if the user is logged in
     rows = select_query("""SELECT * FROM campaign WHERE username = ? AND id = ?""",
-                        [USERNAME, campaign_id])
+                        [login_session['username'], campaign_id])
     if len(rows) != 1:
         return redirect(url_for('index'))
     else:
         # active the campaign
         insert_query("""UPDATE campaign SET active = ?
                         WHERE username = ? and id = ?""",
-                     [False, USERNAME, campaign_id])
+                     [False, login_session['username'], campaign_id])
         if redirect_id == 1:
             return redirect(url_for('welcomeback'))
         else:
@@ -384,24 +382,24 @@ def deactive(campaign_id, redirect_id):
 @app.route('/bill')
 def bill():
     # check if the user is logged in
-    if not USERNAME:
+    if 'username' not in login_session:
         return redirect(url_for('index'))
     else:
         # query information and pass them to html
         bill = select_query("""SELECT bill FROM user WHERE username = ?""",
-                            [USERNAME])[0][0]
+                            [login_session['username']])[0][0]
         items = select_query("""SELECT id, budget, total_show, total_clicks,
                                 current_cost, active
                                 FROM campaign WHERE username = ?
                                 AND current_cost >= 0""",
-                             [USERNAME])
+                             [login_session['username']])
 
         return render_template("bill.html", bill=float(bill), items=items)
 
 @app.route('/payment')
 def payment():
     # check if the user is logged in
-    if not USERNAME:
+    if 'username' not in login_session:
         return redirect(url_for('index'))
     else:
         return render_template("payment.html")
@@ -416,6 +414,8 @@ def ad_request(username, password, catogory):
                         [make_secure_username(username),
                          make_secure_password(password)])
     ####################################
+
+    # TODO: remove ad requests that are more than 1 hr old.
     
     request_id = None
     request_key = None
@@ -489,9 +489,6 @@ def ad_request(username, password, catogory):
 
 @app.route('/ad_passes/<request_id>/<random_key>')
 def ad_passes(request_id, random_key):
-    print select_query("""SELECT * FROM ad_request""",[])
-    print request_id, random_key
-    print type(request_id), type(random_key)
     # get campaign id and delete the ad request
     bid_price = select_query("""SELECT bid_price
                                   FROM ad_request
@@ -501,7 +498,7 @@ def ad_passes(request_id, random_key):
     insert_query("""DELETE FROM ad_request
                     WHERE campaign_id = ? AND request_key = ?""",
                  [request_id, random_key])
-    print bid_price
+    
     # if campaign_id exist, update bill, total_click, and current_cost
     if bid_price:
         campaign_info = select_query("""SELECT budget, max_bid,
@@ -566,5 +563,6 @@ def insert_query(query, args=()):
     #conn.close()
 
 if __name__ == '__main__':
-  app.run()
+    app.secret_key = 'osjfodiasjoIHUUYoihiuGhiUYgUTf%^^7Y9*hOIlBgCHFyTFu&%T'
+    app.run(threaded=True)
 
