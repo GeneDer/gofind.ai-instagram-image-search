@@ -11,6 +11,7 @@ from flask import session as login_session
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
 RANDOM_AD_PROB = 0.2
+EXPIRED_REQUEST_TIME = 3600
 CATEGORY = ['Top', 'Bottom', 'Shoes', 'Accessory']
 SELECTED = {}
 for i in CATEGORY:
@@ -37,7 +38,8 @@ def make_secure_password(val):
     return hmac.new(secret2, val).hexdigest()
 
 def number_checking(s):
-    # a method that checks whether the string can be converted to int or float
+    # a method that checks whether the string can be
+    # converted to either int or float
     try:
         int(s)
         return True
@@ -64,7 +66,7 @@ def index():
 def signup():
     if request.method == 'POST':
 
-        # retrive + url encoding for all fields
+        # retrive for all fields
         username = request.form['username']
         password = request.form['password']
         verify = request.form['verify']
@@ -98,7 +100,8 @@ def signup():
             return render_template("signup.html",
                                    error_username='username already exist')
 
-        # if all correct, store the data into database and redirect to welcomeback page
+        # if all correct, store the data into database
+        # and redirect to welcomeback page
         insert_query("""INSERT INTO user (username, password, bill)
                         VALUES (?,?,0)""",
                       [secured_username, secured_password])
@@ -417,8 +420,6 @@ def ad_request(username, password, catogory):
                         [make_secure_username(username),
                          make_secure_password(password)])
     ####################################
-
-    # TODO: remove ad requests that are more than 1 hr old.
     
     request_id = None
     request_key = None
@@ -505,15 +506,13 @@ def ad_request(username, password, catogory):
 
 @app.route('/ad_passes/<request_id>/<random_key>')
 def ad_passes(request_id, random_key):
-    # get campaign id and delete the ad request
+    
+    # get bid price
     bid_price = select_query("""SELECT bid_price
-                                  FROM ad_request
-                                  WHERE campaign_id = ?
-                                  AND request_key = ?""",
-                               [request_id, random_key])
-    insert_query("""DELETE FROM ad_request
-                    WHERE campaign_id = ? AND request_key = ?""",
-                 [request_id, random_key])
+                                FROM ad_request
+                                WHERE campaign_id = ?
+                                AND request_key = ?""",
+                             [request_id, random_key])
     
     # if campaign_id exist, update bill, total_click, and current_cost
     if bid_price:
@@ -548,16 +547,23 @@ def ad_passes(request_id, random_key):
                          [campaign_info[0][2] + 1,
                           campaign_info[0][3] + bid_price[0][0],
                           request_id])
+
+    # delete this ad request and expired requests
+    insert_query("""DELETE FROM ad_request
+                    WHERE campaign_id = ? AND request_key = ?
+                    OR timestamp < ?""",
+                 [request_id, random_key, time.time() - EXPIRED_REQUEST_TIME])
     
     return jsonify("action complete")
 
 @app.route('/ad_fails/<request_id>/<random_key>')
 def ad_fails(request_id, random_key):
-    # remove the ad_reauest
+
+    # delete this ad request and expired requests
     insert_query("""DELETE FROM ad_request
-                    WHERE id = ?
-                    AND campaign_id = ?""",
-                 [request_id, random_key])
+                    WHERE campaign_id = ? AND request_key = ?
+                    OR timestamp < ?""",
+                 [request_id, random_key, time.time() - EXPIRED_REQUEST_TIME])
     return jsonify("action complete")
     
 @app.teardown_appcontext
@@ -576,7 +582,6 @@ def insert_query(query, args=()):
     conn = get_db()
     conn.execute(query, args)
     conn.commit()
-    #conn.close()
 
 if __name__ == '__main__':
     app.secret_key = 'osjfodiasjoIHUUYoihiuGhiUYgUTf%^^7Y9*hOIlBgCHFyTFu&%T'
