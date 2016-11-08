@@ -10,6 +10,7 @@ from flask import session as login_session
 
 
 #DATABASE = '/var/www/html/flaskapp/adserver.db'
+RANDOM_AD_PROB = 0.2
 CATEGORY = ['Top', 'Bottom', 'Shoes', 'Accessory']
 SELECTED = {}
 for i in CATEGORY:
@@ -404,6 +405,8 @@ def payment():
     else:
         return render_template("payment.html")
 
+
+# ad request api's
 @app.route('/ad_request/<username>/<password>/<catogory>')
 def ad_request(username, password, catogory):
 
@@ -435,38 +438,51 @@ def ad_request(username, password, catogory):
         # if there are campaigns in this category
         if len(max_bids) > 0:
 
-            # if more than one campaign with highest bid,
-            if max_bids[0][1] > 1:
-                # randomly select one highest bid as the winner
-                winner = select_query("""SELECT id, ad_url, total_show
+            # give a random ad at RANDOM_AD_PROB of time
+            if random.random() > RANDOM_AD_PROB:
+                winner = select_query("""SELECT id, ad_url, total_show, max_bid
                                          FROM campaign
                                          WHERE category = ? AND active = ?
-                                         AND max_bid = ?
                                          ORDER BY RAND()
                                          LIMIT 1""",
-                                      [catogory, True, max_bids[0][0]])
-                request_bid = max_bids[0][0]
-
-            # if there are only one campaign
-            elif len(max_bids) == 1:
-                # only one active campaign, just return the min_bid
-                winner = select_query("""SELECT id, ad_url, total_show, min_bid
-                                         FROM campaign
-                                         WHERE category = ? AND active = ?
-                                         AND max_bid = ?""",
-                                      [catogory, True, max_bids[0][0]])
+                                      [catogory, True])
                 request_bid = winner[0][3]
 
-            # else its the case for one highest bidder and some second bidders
+            # do the actual bidding otherwise
             else:
-                # only one active campaign with highest bid, just return
-                # max(min_bid of the selected bid, second highest bid)
-                winner = select_query("""SELECT id, ad_url, total_show, min_bid
-                                         FROM campaign
-                                         WHERE category = ? AND active = ?
-                                         AND max_bid = ?""",
-                                      [catogory, True, max_bids[0][0]])
-                request_bid = max(winner[0][3], max_bids[1][0])
+
+                # if more than one campaign with highest bid,
+                if max_bids[0][1] > 1:
+                    # randomly select one highest bid as the winner
+                    winner = select_query("""SELECT id, ad_url, total_show
+                                             FROM campaign
+                                             WHERE category = ? AND active = ?
+                                             AND max_bid = ?
+                                             ORDER BY RAND()
+                                             LIMIT 1""",
+                                          [catogory, True, max_bids[0][0]])
+                    request_bid = max_bids[0][0]
+
+                # if there are only one campaign
+                elif len(max_bids) == 1:
+                    # only one active campaign, just return the min_bid
+                    winner = select_query("""SELECT id, ad_url, total_show, min_bid
+                                             FROM campaign
+                                             WHERE category = ? AND active = ?
+                                             AND max_bid = ?""",
+                                          [catogory, True, max_bids[0][0]])
+                    request_bid = winner[0][3]
+
+                # else its the case for one highest bidder and some second bidders
+                else:
+                    # only one active campaign with highest bid, just return
+                    # max(min_bid of the selected bid, second highest bid)
+                    winner = select_query("""SELECT id, ad_url, total_show, min_bid
+                                             FROM campaign
+                                             WHERE category = ? AND active = ?
+                                             AND max_bid = ?""",
+                                          [catogory, True, max_bids[0][0]])
+                    request_bid = max(winner[0][3], max_bids[1][0] + 0.01)
 
             # all of them are setting id, url, show, and key the same way
             request_id = winner[0][0]
