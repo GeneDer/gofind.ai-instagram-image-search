@@ -60,7 +60,10 @@ def number_checking(s):
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    if 'username' in login_session:
+        return redirect(url_for('welcomeback'))
+    else:
+        return render_template("index.html")
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
