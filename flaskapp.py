@@ -125,7 +125,8 @@ def login():
         secured_password = make_secure_password(password)
         
         # query for the user in database
-        rows = select_query("""SELECT COUNT(*) FROM user WHERE username = ? AND password = ?""",
+        rows = select_query("""SELECT COUNT(*) FROM user
+                               WHERE username = ? AND password = ?""",
                             [secured_username, secured_password])
 
         # if user exist, sent to welcomeback page. else disply error
@@ -134,8 +135,7 @@ def login():
             return redirect(url_for('welcomeback'))
         else:
             return render_template("login.html",
-                                   username=username,
-                                   error_username="user not exist or incorrect password")
+                                   error="user does not exist or incorrect password")
     else:
         return render_template("login.html")
 

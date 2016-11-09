@@ -1,41 +1,54 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
   <head>
-    <title>Login</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in</title>
+    <link href="../static/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/jumbotron-narrow.css" rel="stylesheet">
+    <link rel="icon" href="../static/gofind2.png">
   </head>
-  
+
   <body>
-    <h1>Gofind.ai Ad Server</h1>
     
-    <h2>Login</h2>
-    <form method="POST">
-      <table>
-        <tr>
-          <td class="label">
-            Username
-          </td>
-          <td>
-            <input type="text" name="username" value="{{username}}">
-          </td>
-          <td class="error">
-            {{error_username}}
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="label">
-            Password
-          </td>
-          <td>
-            <input type="password" name="password" value="">
-          </td>
-        </tr>
-      </table>
+    <div class="container text-center">
+      <div class="header">
+        <div class="row header-backgroung">
+          <div class="col-md-4 large-text">
+            <a href="{{ url_for('index') }}">
+              <img src="../static/gofind.png" class="img-responsive pull-right" alt="gofind logo">
+                </a>
+          </div>
+          <div class="col-md-8 pull-left large-text">
+            <div class="large-text bold-text">GO</div>
+            <div class="large-text">FIND</div>
+          </div>
+        </div>
+      </div>
       
-      <input type="submit">
-      <a href = '{{ url_for('index') }}'>Cancel</a>
-    </form>
+      <div class="row" >
+        <div class="col-md-12">
+          <h1 class="page-title">SIGN IN</h1>
+        </div>
+      </div>
+      
+      <form class="form-signin form-style center-block" method="POST">
+        
+        <input type="text" name="username" class="form-control" placeholder="Username" required autofocus>
+        
+        <input type="password" name="password" class="form-control" placeholder="Password" required>
+        <br>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <br>
+        <p class="entry-error">{{error}}</p>
+        <br>
+        <p>
+          <a class="btn btn-lg btn-success btn-block" href="{{ url_for('signup') }}" role="button">Sign up</a>
+        </p>
+      </form>
+      
+    </div>
   </body>
   
 </html>

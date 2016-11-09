@@ -38,3 +38,14 @@ body {
   font-size: 50px;
   font-weight:bold;
 }
+
+.form-style{
+  max-width: 300px;
+  
+}
+
+.entry-error{
+  color: red;
+  font-weight: bold;
+}
+
