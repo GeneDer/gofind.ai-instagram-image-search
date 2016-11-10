@@ -77,20 +77,20 @@ def signup():
         # check for valid entries
         if len(username) > 250:
             return render_template("signup.html",
-                                   error_username='length of username > 250')
+                                   error='length of username > 250 characters')
         if len(username) == 0:
             return render_template("signup.html",
                                    username=username,
-                                   error_username='no username entered')
+                                   error='no username entered')
         if len(password) > 250:
             return render_template("signup.html",
-                                   error_password='length of password > 250')
+                                   error='length of password > 250 characters')
         if len(password) == 0:
             return render_template("signup.html",
-                                   error_password='no password entered')
+                                   error='no password entered')
         if password != verify:
             return render_template("signup.html",
-                                   error_varify='passwords do not match')
+                                   error='passwords do not match')
 
         # hash + salt for username and password
         secured_username = make_secure_username(username)
@@ -101,7 +101,7 @@ def signup():
                             [secured_username])
         if rows[0][0] != 0:
             return render_template("signup.html",
-                                   error_username='username already exist')
+                                   error='username already exist')
 
         # if all correct, store the data into database
         # and redirect to welcomeback page
