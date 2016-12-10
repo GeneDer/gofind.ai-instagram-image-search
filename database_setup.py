@@ -7,46 +7,45 @@ from sqlalchemy import create_engine
 
 Base = declarative_base()
 
-
 class User(Base):
-    __tablename__ = 'user'
-
-    username = Column(String(250), primary_key=True)
-    password = Column(String(250), nullable=False)
-    bill = Column(Numeric(12, 2), nullable=False)
-
-class Campaign(Base):
-    __tablename__ = 'campaign'
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    category = Column(String(80), nullable=False)
-    budget = Column(Numeric(12, 2), nullable=False)
-    min_bid = Column(Numeric(12, 2), nullable=False)
-    max_bid = Column(Numeric(12, 2), nullable=False)
-    ad_url = Column(String(250), nullable=False)
-    description = Column(String(2000))
-    total_show = Column(Integer, nullable=False)
-    total_clicks = Column(Integer, nullable=False)
-    current_cost = Column(Numeric(12, 2), nullable=False)
-    active = Column(Boolean, nullable=False)
-    username = Column(String(250), nullable=False)
+    username = Column(String(2000), nullable=False)
 
-class Customer(Base):
-    __tablename__ = 'customer'
-
-    username = Column(String(250), primary_key=True)
-    password = Column(String(250), nullable=False)
-
-class Ad_request(Base):
-    __tablename__ = 'ad_request'
+class Main_image(Base):
+    __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True)
-    request_key = Column(Integer, nullable=False)
-    campaign_id = Column(Integer, nullable=False)
-    bid_price = Column(Numeric(12, 2), nullable=False)
-    timestamp = Column(Integer, nullable=False)
+    main_image_path = Column(String(2000), nullable=False)
+    username = Column(String(2000), nullable=False)
 
-engine = create_engine('sqlite:///adserver.db')
+class Segmented(Base):
+    __tablename__ = 'segmented'
+
+    id = Column(Integer, primary_key=True)
+    segmented_image_path = Column(String(2000), nullable=False)
+    classes = Column(String(200), nullable=False)
+    cx = Column(Numeric(12, 2), nullable=False)
+    cy = Column(Numeric(12, 2), nullable=False)
+    w = Column(Numeric(12, 2), nullable=False)
+    h = Column(Numeric(12, 2), nullable=False)
+    confidence = Column(Numeric(12, 10), nullable=False)
+    post_id = Column(Integer, nullable=False)
+
+class Results(Base):
+    __tablename__ = 'results'
+
+    id = Column(Integer, primary_key=True)
+    segmented_id = Column(Integer, nullable=False)
+    image_url = Column(String(2000), nullable=False)
+    seller_url = Column(String(2000), nullable=False)
+    seller_name = Column(String(200), nullable=False)
+    item_name = Column(String(200), nullable=False)
+    price = Column(String(200), nullable=False)
+
+
+engine = create_engine('sqlite:///instagram.db')
 
 
 Base.metadata.create_all(engine)
