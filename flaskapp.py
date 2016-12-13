@@ -7,7 +7,7 @@ import time
 app = Flask(__name__)
 app.config.from_object(__name__)
 
-@app.route('/IOJojLKMDASBidlkmasd/<access_token>')
+@app.route('/gofind-instagram-api/<access_token>')
 def instagram_api(access_token):
     s = Session()
     req = Request('GET', "https://api.instagram.com/v1/users/self/?access_token=%s"%access_token)
